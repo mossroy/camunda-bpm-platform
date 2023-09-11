@@ -1059,6 +1059,11 @@ public abstract class ProcessEngineConfigurationImpl extends ProcessEngineConfig
   protected boolean reevaluateTimeCycleWhenDue = false;
 
   /**
+   * Size of batch in which removal time data will be updated. {@link ProcessSetRemovalTimeJobHandler#MAX_CHUNK_SIZE} must be respected.
+   */
+  protected int removalTimeUpdateChunkSize = 500;
+
+  /**
    * @return {@code true} if the exception code feature is disabled and vice-versa.
    */
   public boolean isDisableExceptionCode() {
@@ -1522,6 +1527,11 @@ public abstract class ProcessEngineConfigurationImpl extends ProcessEngineConfig
         batchHandlers.put(customBatchJobHandler.getType(), customBatchJobHandler);
       }
     }
+
+    if (removalTimeUpdateChunkSize > ProcessSetRemovalTimeJobHandler.MAX_CHUNK_SIZE || removalTimeUpdateChunkSize <= 0) {
+      throw LOG.invalidPropertyValue("removalTimeUpdateChunkSize", String.valueOf(removalTimeUpdateChunkSize),
+          String.format("value for chunk size should be between 1 and %s", ProcessSetRemovalTimeJobHandler.MAX_CHUNK_SIZE));
+    }
   }
 
   // command executors ////////////////////////////////////////////////////////
@@ -1889,6 +1899,9 @@ public abstract class ProcessEngineConfigurationImpl extends ProcessEngineConfig
       properties.put("limitBeforeNativeQuery", DbSqlSessionFactory.databaseSpecificLimitBeforeNativeQueryStatements.get(databaseType));
       properties.put("distinct", DbSqlSessionFactory.databaseSpecificDistinct.get(databaseType));
       properties.put("numericCast", DbSqlSessionFactory.databaseSpecificNumericCast.get(databaseType));
+
+      properties.put("limitBeforeInUpdate", DbSqlSessionFactory.databaseSpecificLimitBeforeInUpdate.get(databaseType));
+      properties.put("limitAfterInUpdate", DbSqlSessionFactory.databaseSpecificLimitAfterInUpdate.get(databaseType));
 
       properties.put("countDistinctBeforeStart", DbSqlSessionFactory.databaseSpecificCountDistinctBeforeStart.get(databaseType));
       properties.put("countDistinctBeforeEnd", DbSqlSessionFactory.databaseSpecificCountDistinctBeforeEnd.get(databaseType));
@@ -5334,6 +5347,15 @@ public abstract class ProcessEngineConfigurationImpl extends ProcessEngineConfig
 
   public ProcessEngineConfigurationImpl setReevaluateTimeCycleWhenDue(boolean reevaluateTimeCycleWhenDue) {
     this.reevaluateTimeCycleWhenDue = reevaluateTimeCycleWhenDue;
+    return this;
+  }
+
+  public int getRemovalTimeUpdateChunkSize() {
+    return removalTimeUpdateChunkSize;
+  }
+
+  public ProcessEngineConfigurationImpl setRemovalTimeUpdateChunkSize(int removalTimeUpdateChunkSize) {
+    this.removalTimeUpdateChunkSize = removalTimeUpdateChunkSize;
     return this;
   }
 
